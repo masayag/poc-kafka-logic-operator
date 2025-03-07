@@ -47,7 +47,7 @@ states:
           message: ${ "Waiting lock release " + .name }
     eventRef: release-event
     timeouts:
-      stateExecTimeout: PT15M
+      eventTimeout: PT3M
     transition: releaseLock
   - name: releaseLock
     type: operation

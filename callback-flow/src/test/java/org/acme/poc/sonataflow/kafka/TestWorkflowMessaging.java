@@ -41,7 +41,7 @@ class TestWorkflowMessaging {
     ObjectMapper mapper;
 
     @Test
-    void testExecWorkflow() throws InterruptedException, JsonProcessingException {
+    void testExecWorkflow() throws JsonProcessingException {
         final LockData lock = new LockData("The Kraken");
         final String lockJson = mapper.writeValueAsString(lock);
         final String lockEvent = mapper.writeValueAsString(CloudEventBuilder.v1()
