@@ -1,6 +1,6 @@
 # How to Send and Receive Kafka Messages in [SonataFlow Workflows](https://sonataflow.org)
 
-📌 Summary
+## **📌 Summary**
 
 This guide explains how to integrate **Kafka messaging** into a **SonataFlow workflow application** using the **Quarkus SmallRye Kafka Connector**. It covers:
 
