@@ -1,0 +1,103 @@
+apiVersion: sonataflow.org/v1alpha08
+kind: SonataFlow
+metadata:
+  annotations:
+    sonataflow.org/description: ""
+    sonataflow.org/expressionLang: jq
+    sonataflow.org/profile: preview
+    sonataflow.org/version: 1.0.0
+  labels:
+    app: lock-flow
+    app.kubernetes.io/component: serverless-workflow
+    app.kubernetes.io/managed-by: sonataflow-operator
+    app.kubernetes.io/name: lock-flow
+    sonataflow.org/workflow-app: lock-flow
+    sonataflow.org/workflow-namespace: default
+  name: lock-flow
+  namespace: default
+spec:
+  flow:
+    events:
+    - correlation:
+      - contextAttributeName: lockid
+      dataOnly: true
+      kind: consumed
+      name: lock-event
+      source: local
+      type: lock-event
+    - correlation:
+      - contextAttributeName: lockid
+      dataOnly: true
+      kind: consumed
+      name: release-event
+      source: local
+      type: release-event
+    - correlation:
+      - contextAttributeName: lockid
+      dataOnly: true
+      kind: produced
+      name: released-event
+      type: released-event
+    functions:
+    - name: sysLog
+      operation: sysout:INFO
+      type: custom
+    start:
+      stateName: listenToLock
+    states:
+    - exclusive: true
+      name: listenToLock
+      onEvents:
+      - actionMode: sequential
+        actions:
+        - actionDataFilter:
+            useResults: true
+          functionRef:
+            arguments:
+              message: ${ "Lock received " + .name }
+            invoke: sync
+            refName: sysLog
+        eventDataFilter:
+          useData: true
+        eventRefs:
+        - lock-event
+      transition:
+        nextState: waitForRelease
+      type: event
+    - action:
+        actionDataFilter:
+          useResults: true
+        functionRef:
+          arguments:
+            message: ${ "Waiting lock release " + .name }
+          invoke: sync
+          refName: sysLog
+      eventRef: release-event
+      name: waitForRelease
+      #timeouts: # removing timers to not have to deploy Jobs Service in the cluster
+      #  eventTimeout: PT3M
+      transition:
+        nextState: releaseLock
+      type: callback
+    - actionMode: sequential
+      actions:
+      - actionDataFilter:
+          useResults: true
+        functionRef:
+          arguments:
+            message: ${ "Lock " +  .name +  " released" }
+          invoke: sync
+          refName: sysLog
+      end:
+        produceEvents:
+        - data: null
+          eventRef: released-event
+      name: releaseLock
+      type: operation
+  podTemplate:
+    container:
+      resources: {}
+  resources: {}
+status:
+  address: {}
+  lastTimeRecoverAttempt: null

@@ -1,0 +1,23 @@
+apiVersion: v1
+data:
+  application.properties: |
+    mp.messaging.incoming.lock-event.connector=smallrye-kafka
+    mp.messaging.incoming.lock-event.value.deserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer
+
+    mp.messaging.incoming.release-event.connector=smallrye-kafka
+    mp.messaging.incoming.release-event.value.deserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer
+
+    mp.messaging.outgoing.released-event.connector=smallrye-kafka
+    mp.messaging.outgoing.released-event.value.serializer=org.apache.kafka.common.serialization.StringSerializer
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    app: lock-flow
+    app.kubernetes.io/component: serverless-workflow
+    app.kubernetes.io/managed-by: sonataflow-operator
+    app.kubernetes.io/name: lock-flow
+    sonataflow.org/workflow-app: lock-flow
+    sonataflow.org/workflow-namespace: default
+  name: lock-flow-props
+  namespace: default

@@ -1,0 +1,70 @@
+# Enable KRaft mode (No ZooKeeper)
+extraEnvVars:
+  - name: KAFKA_ENABLE_KRAFT
+    value: "yes"
+  - name: KAFKA_CFG_PROCESS_ROLES
+    value: "broker,controller"
+  - name: KAFKA_CFG_CONTROLLER_LISTENER_NAMES
+    value: "CONTROLLER"
+  - name: KAFKA_CFG_LISTENERS
+    value: "PLAINTEXT://:9092,CONTROLLER://:9093"
+  - name: KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP
+    value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+  - name: KAFKA_CFG_CONTROLLER_QUORUM_VOTERS
+    value: "0@localhost:9093"
+  - name: KAFKA_CFG_DEFAULT_REPLICATION_FACTOR
+    value: "1"
+  - name: KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR
+    value: "1"
+  - name: KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+    value: "1"
+  - name: KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR
+    value: "1"
+  - name: KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE
+    value: "true"  # Ensure Kafka can auto-create topics if needed
+  - name: KAFKA_CFG_NUM_PARTITIONS
+    value: "1"
+  - name: KAFKA_CFG_MIN_INSYNC_REPLICAS
+    value: "1"
+  - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+    value: "1"
+
+extraConfig: |
+  transaction.state.log.replication.factor=1
+  offsets.topic.replication.factor=1
+
+controller:
+  replicaCount: 1
+  persistence:
+    enabled: false
+
+kafka:
+  persistence:
+    enabled: false
+
+# Disable ZooKeeper
+zookeeper:
+  enabled: false
+
+# Disable authentication
+listeners:
+  external:
+    protocol: PLAINTEXT
+  controller:
+    protocol: PLAINTEXT
+  client:
+    protocol: PLAINTEXT
+
+# Automatically create Kafka topics
+provisioning:
+  enabled: true
+  topics:
+    - name: lock-event
+      partitions: 1
+      replicationFactor: 1
+    - name: release-event
+      partitions: 1
+      replicationFactor: 1
+    - name: released-event
+      partitions: 1
+      replicationFactor: 1
