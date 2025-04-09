@@ -139,7 +139,7 @@ docker run -d --name kafka \
 ### **2️⃣ Start the Quarkus Application**
 ```shell
 cd callback-flow
-mvn clean quarkus-dev
+mvn clean quarkus:dev
 ```
 
 ### **3️⃣ Send Events to Kafka**
