@@ -3,12 +3,20 @@ data:
   application.properties: |
     mp.messaging.incoming.lock-event.connector=smallrye-kafka
     mp.messaging.incoming.lock-event.value.deserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer
+    mp.messaging.incoming.lock-event.topic=lock-event
 
     mp.messaging.incoming.release-event.connector=smallrye-kafka
     mp.messaging.incoming.release-event.value.deserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer
+    mp.messaging.incoming.release-event.topic=release-event
 
     mp.messaging.outgoing.released-event.connector=smallrye-kafka
     mp.messaging.outgoing.released-event.value.serializer=org.apache.kafka.common.serialization.StringSerializer
+    mp.messaging.outgoing.released-event.topic=released-event
+
+    mp.messaging.outgoing.notify-event.connector=smallrye-kafka
+    mp.messaging.outgoing.notify-event.value.serializer=org.apache.kafka.common.serialization.StringSerializer
+    mp.messaging.outgoing.notify-event.topic=notify-event
+
 kind: ConfigMap
 metadata:
   creationTimestamp: null

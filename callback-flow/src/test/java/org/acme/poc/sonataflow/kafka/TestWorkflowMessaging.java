@@ -69,6 +69,11 @@ class TestWorkflowMessaging {
             return processCount > 0;
         });
 
+        // Consume ONLY ONE message from "notify-event"
+        ConsumerTask<String, String> notifyLock = companion.consumeStrings().fromTopics("notify-event", 1);
+        notifyLock.awaitCompletion();
+        assertEquals(1, notifyLock.count());
+
         // Release the kraken!
         final String releaseEvent = mapper.writeValueAsString(CloudEventBuilder.v1()
                 .withId(UUID.randomUUID().toString())

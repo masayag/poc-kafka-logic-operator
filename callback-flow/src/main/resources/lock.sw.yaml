@@ -16,6 +16,11 @@ events:
     source: local
     correlation:
       - contextAttributeName: lockid
+  - type: notify-event
+    kind: produced
+    name: notify-event
+    correlation:
+      - contextAttributeName: lockid
   - type: released-event
     kind: produced
     name: released-event
@@ -37,6 +42,17 @@ states:
               refName: sysLog
               arguments:
                 message: ${ "Lock received " + .name }
+    transition: notifyLock
+  - name: notifyLock
+    type: operation
+    actions:
+      - eventRef:
+          data: ${ "Workflow " + $WORKFLOW.id + " has now the lock " + .name }
+          triggerEventRef: notify-event
+      - functionRef:
+          refName: sysLog
+          arguments:
+            message: ${ "Notified lock release " + .name }
     transition: waitForRelease
   - name: waitForRelease
     type: callback

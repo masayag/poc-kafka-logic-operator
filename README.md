@@ -120,23 +120,50 @@ Quarkus automatically starts a **lightweight Kafka broker** in test mode:
 
 ## **🚀 Running the Workflow in Dev Mode**
 
-### **1️⃣ Start a Kafka Instance**
+### 1️⃣ Start a Kafka Instance
 
-Below are two options to run Kafka with SSL. Choose one depending on whether you require **one-way TLS** (only server authentication) or **mutual TLS** (both server and client authenticate).
+| Option | Security level                                 |
+|:------:|------------------------------------------------|
+| **A**  | Plain (no authentication)                      |
+| **B**  | One‑Way TLS (broker authenticated only)        |
+| **C**  | Mutual TLS (both broker **and** client auth)   |
 
-### **🔐 Option A: TLS (One-Way Authentication)**
+### 🔓 Option A: Plain (No Authentication)
 
-In one-way TLS, the Kafka broker presents its certificate to the client for encryption and server validation. The client (your Quarkus application) only needs to trust the broker's certificate.
-
-#### Running Kafka with One-Way TLS
-
-Ensure your JKS certificate files are stored locally and the folder path is exported via the environment variable `KAFKA_TRUSTSTORE_PATH`. Then run the container with client authentication disabled:
-
-```shell
+**Run the broker:**
+```bash
 docker run -it --rm --name kafka \
   -p 9092:9092 \
-  -p 9093:9093 \
-  -p 9094:9094 \
+  -e KAFKA_CFG_NODE_ID=0 \
+  -e KAFKA_CFG_PROCESS_ROLES=controller,broker \
+  -e KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@localhost:9093 \
+  -e KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093 \
+  -e KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092,CONTROLLER://localhost:9093 \
+  -e KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT \
+  -e KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER \
+  -e KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT \
+  bitnami/kafka:latest
+```
+
+**Quarkus `application.properties`:**
+```properties
+# bootstrap the client
+%dev.kafka.bootstrap.servers=localhost:9092
+
+# no TLS at all
+%dev.mp.messaging.connector.smallrye-kafka.security.protocol=PLAINTEXT
+```
+
+### 🔐 Option B: One‑Way TLS (Server Authentication Only)
+
+> The broker presents its cert; the client only **trusts** it, no client cert required.
+
+**Run the broker:**
+```bash
+export KAFKA_TRUSTSTORE_PATH=/path/to/your/certs
+
+docker run -it --rm --name kafka \
+  -p 9092:9092 -p 9093:9093 -p 9094:9094 \
   -v $KAFKA_TRUSTSTORE_PATH/kafka.server.keystore.jks:/bitnami/kafka/config/certs/kafka.keystore.jks \
   -v $KAFKA_TRUSTSTORE_PATH/kafka.server.truststore.jks:/bitnami/kafka/config/certs/kafka.truststore.jks \
   -e KAFKA_CFG_NODE_ID=0 \
@@ -145,7 +172,6 @@ docker run -it --rm --name kafka \
   -e KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092,SSL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094 \
   -e KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092,SSL://localhost:9093,CONTROLLER://localhost:9094 \
   -e KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,SSL:SSL,CONTROLLER:PLAINTEXT \
-  -e KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER \
   -e KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT \
   -e KAFKA_CFG_SSL_KEYSTORE_LOCATION=/bitnami/kafka/config/certs/kafka.keystore.jks \
   -e KAFKA_CFG_SSL_KEYSTORE_PASSWORD=changeit \
@@ -155,38 +181,33 @@ docker run -it --rm --name kafka \
   bitnami/kafka:latest
 ```
 
-#### Quarkus Properties for One-Way TLS
-
-In your `application.properties`, disable non-TLS settings and enable TLS (one-way) by setting:
-
-```shell
+**Quarkus `application.properties`:**
+```properties
 %dev.kafka.bootstrap.servers=localhost:9093
+
 mp.messaging.connector.smallrye-kafka.security.protocol=SSL
 mp.messaging.connector.smallrye-kafka.ssl.enabled.protocols=TLSv1.2
 
-# Truststore configuration (client uses this to validate the broker's certificate)
-mp.messaging.connector.smallry-kafka.ssl.truststore.location=${KAFKA_TRUSTSTORE_PATH}/kafka.server.truststore.jks
+# trust only the broker’s cert
+mp.messaging.connector.smallrye-kafka.ssl.truststore.location=${KAFKA_TRUSTSTORE_PATH}/kafka.server.truststore.jks
 mp.messaging.connector.smallrye-kafka.ssl.truststore.password=changeit
 
-# For mutual TLS, do NOT enable the following lines when using one-way TLS:
-# mp.messaging.connector.smallrye-kafka.ssl.keystore.location=${KAFKA_TRUSTSTORE_PATH}/kafka.server.keystore.jks
-# mp.messaging.connector.smallrye-kafka.ssl.keystore.password=changeit
-# mp.messaging.connector.smallrye-kafka.ssl.key.password=changeit
+# do NOT enable client‐side keystore here
+# mp.messaging.connector.smallrye-kafka.ssl.keystore.location=...
+# mp.messaging.connector.smallrye-kafka.ssl.keystore.password=...
+# mp.messaging.connector.smallrye-kafka.ssl.key.password=...
 ```
 
-### **🔑 Option B: Mutual TLS (Two-Way Authentication)**
+### 🔑 Option C: Mutual TLS (Two‑Way Authentication)
 
-In mutual TLS, both the Kafka broker and the client authenticate each other via certificates. The client must be configured with its own certificate (keystore) as well as trust the broker.
+> Both broker **and** client present certificates.
 
-#### Running Kafka with Mutual TLS
+**Run the broker:**
+```bash
+export KAFKA_TRUSTSTORE_PATH=/path/to/your/certs
 
-Run the Kafka container such that it requires client authentication by setting the SSL client auth variable to `required`:
-
-```shell
 docker run -it --rm --name kafka \
-  -p 9092:9092 \
-  -p 9093:9093 \
-  -p 9094:9094 \
+  -p 9092:9092 -p 9093:9093 -p 9094:9094 \
   -v $KAFKA_TRUSTSTORE_PATH/kafka.server.keystore.jks:/bitnami/kafka/config/certs/kafka.keystore.jks \
   -v $KAFKA_TRUSTSTORE_PATH/kafka.server.truststore.jks:/bitnami/kafka/config/certs/kafka.truststore.jks \
   -e KAFKA_CFG_NODE_ID=0 \
@@ -195,7 +216,6 @@ docker run -it --rm --name kafka \
   -e KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092,SSL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094 \
   -e KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092,SSL://localhost:9093,CONTROLLER://localhost:9094 \
   -e KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,SSL:SSL,CONTROLLER:PLAINTEXT \
-  -e KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER \
   -e KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT \
   -e KAFKA_CFG_SSL_KEYSTORE_LOCATION=/bitnami/kafka/config/certs/kafka.keystore.jks \
   -e KAFKA_CFG_SSL_KEYSTORE_PASSWORD=changeit \
@@ -205,30 +225,28 @@ docker run -it --rm --name kafka \
   bitnami/kafka:latest
 ```
 
-#### Quarkus Properties for Mutual TLS
-
-When using mutual TLS, enable both the truststore settings and the client-side keystore settings:
-
-```shell
+**Quarkus `application.properties`:**
+```properties
 %dev.kafka.bootstrap.servers=localhost:9093
+
 mp.messaging.connector.smallrye-kafka.security.protocol=SSL
 mp.messaging.connector.smallrye-kafka.ssl.enabled.protocols=TLSv1.2
 
-# Truststore configuration (client uses this to validate the broker's certificate)
+# trust the broker
 mp.messaging.connector.smallrye-kafka.ssl.truststore.location=${KAFKA_TRUSTSTORE_PATH}/kafka.server.truststore.jks
 mp.messaging.connector.smallrye-kafka.ssl.truststore.password=changeit
 
-# Client-side keystore configuration (for mutual TLS)
+# client cert for mutual TLS
 mp.messaging.connector.smallrye-kafka.ssl.keystore.location=${KAFKA_TRUSTSTORE_PATH}/kafka.server.keystore.jks
 mp.messaging.connector.smallrye-kafka.ssl.keystore.password=changeit
 mp.messaging.connector.smallrye-kafka.ssl.key.password=changeit
 ```
 
-## 🚀 Running the Workflow in Dev Mode (Common Steps)
+## **🚀 Running the Workflow in Dev Mode (Common Steps)**
 
 ### **1️⃣ Start Kafka**
 
-Choose one of the above Docker commands (Option A or Option B) to launch Kafka with your desired SSL configuration.
+Choose one of the above Docker commands (Option A, Option B, or Option C) to launch Kafka with your desired SSL configuration.
 
 ### **2️⃣ Start the Quarkus Application**
 ```shell
@@ -274,7 +292,7 @@ Kafka serves as the messaging backbone for the workflow. Deploy a single-node Ka
 ```shell
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
-helm install kafka bitnami/kafka -f kafka/values.yaml
+helm install kafka bitnami/kafka -f manifests/kafka/values.yaml
 ```
 
 Once installed, verify that the Kafka broker is running:
