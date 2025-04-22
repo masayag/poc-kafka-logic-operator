@@ -1,0 +1,21 @@
+{
+    "specversion": "1.0",
+    "id": "source-id-val-1",
+    "source": "http://dev.local",
+    "type": "create-ocp-project-service-output-event",
+    "datacontenttype": "application/json",
+    "time": "2025-03-07T15:04:32.327635-05:00",
+    "correlationid": "correlation-id-val-1",
+    "data": {
+        "source": "source-val",
+        "result": {
+            "status": "Success",
+            "description": "Request completed successfully. ProjectID=project-uuid, ProjectName=sector-val-org-val-project-val-csiId-val.",
+            "output": {
+                "rawObject": "",
+                "clusterName": "clusterName-val",
+                "project": "cti-svcs-project-val-csiId-val"
+            }
+        }
+    }
+}

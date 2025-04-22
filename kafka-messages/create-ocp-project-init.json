@@ -1,0 +1,33 @@
+{
+    "specversion": "1.0",
+    "id": "source-id-val-1",
+    "source": "http://dev.local",
+    "type": "create-ocp-project-init-event",
+    "datacontenttype": "application/json",
+    "time": "2025-03-07T15:04:32.327635-05:00",
+    "correlationid": "correlation-id-val-1",
+    "data": {
+        "id": "source-id-val-1",
+        "time": "2025-03-07T15:04:32.327635-05:00",
+        "source": "source-val",
+        "version": "1.0",
+        "type": "OPENSHIFT",
+        "reason": "resource-val",
+        "externalReference": {
+        },
+        "params": {
+            "csiId": "csiId-val",
+            "environment": "dev",
+            "region": "region-val",
+            "clusterName": "clusterName-val",
+            "resource": "project",
+            "subResource": "",
+            "action": "create",
+            "project": "project-val",
+            "details": {
+                "sector": "sector-val",
+                "organization" : "org-val"
+            }
+        }
+    }
+}

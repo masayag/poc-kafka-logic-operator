@@ -1,0 +1,130 @@
+
+Initiate when there is a new event in a queue (Create project).
+Event format is under works for now let us consider that this event will encompass all the data needed for subsequent calls.
+Take the consumed event data and produce event (subset data) in service queue (Create OpenShift project).
+Sample:
+{
+    "version": "1.0",
+    "source": "source-val",
+    "id": "id-val",
+    "time": "2025-04-16T:16:56:56Z",
+    "reason": "resource-val",
+    "type": "OPENSHIFT",
+    "externalReference": {
+    },
+    "params": {
+        "csiId": "csiId-val",
+        "environment": "dev",
+        "region": region-val,
+        "clusterName": "clusterName-val",
+        "resource": "project",
+        "subResource": "",
+        "action": "create",
+        "project": "project-val",
+        "details": {
+            "sector": sector-val,
+            "organization" : org-val
+        }
+    }
+}
+ 
+
+Consume service output from queue.
+Sample:
+{
+    "version": "1.0",
+    "id": "id-val",
+    "source": "source-val",
+    "time": "2025-04-16 21:59:36",
+    "code": null,
+    "result": {
+        "status": "Success",
+        "description": "Request completed successfully. ProjectID=project-uuid, ProjectName=sector-val-org-val-project-val-csiId-val.",
+        "output": {
+            "rawObject": "",
+            "clusterName": "clusterName-val",
+            "project": "cti-svcs-project-val-csiId-val"
+        }
+    }
+}
+
+Produce standardized output into a queue.
+Sample: Compiled from the above two events
+{
+    "id": "id-val",
+    "clusterName": "clusterName-val",
+    "project": "sector-val-org-val-project-val-csiId-val",
+    "time": "2025-04-16 21:59:36",
+    "resource": "project",
+    "subResource": "",
+    "action": "create",
+    "status": "Success",
+    "description": "Request completed successfully. ProjectID=project-uuid, ProjectName=sector-val-org-val-project-val-csiId-val."
+}
+
+ Decision on the previous output – Produce event in service queue (Assign compute resources).
+Sample:
+{
+    "version": "1.0",
+    "source": "source-val",
+    "id": "id2-val",
+    "time": "2025-04-16T:17:05:56Z",
+    "reason": "resource-val",
+    "type": "OPENSHIFT",
+    "externalReference": {},
+    "params": {
+        "csiId": "csiId-val",
+        "environment": "dev",
+        "region": region-val,
+        "clusterName": "clusterName-val",
+        "resource": "resourceQuota",
+        "subResource": "",
+        "action": "update",
+        "project": "sector-val-org-val-project-val-csiId-val",
+        "details": {
+            "resources": {
+                "limits": {
+                    "cpu": "2.5",
+                    "memory": "20Gi"
+                },
+                "requests": {
+                    "cpu": "500m",
+                    "memory": "5Gi"
+                }
+            }
+        }
+    }
+}
+
+Consume service output from queue.
+Sample:
+{
+    "version": "1.0",
+    "id": "id-val",
+    "source": "source-val",
+    "time": "2025-04-16 22:20:53",
+    "code": null,
+    "result": {
+        "status": "Success",
+        "description": "Successfully added project resource.",
+        "output": {
+            "rawObject": "",
+            "clusterName": "clusterName-val",
+            "project": "sector-val-org-val-project-val-csiId-val"
+        }
+    }
+}
+
+Produce standardized output into a queue.
+Sample: Compiled from the above two events
+{
+    "id": "id-val",
+    "clusterName": "clusterName-val",
+    "project": "sector-val-org-val-project-val-csiId-val",
+    "time": "2025-04-16 22:20:53",
+    "resource": " resourceQuota",
+    "subResource": "",
+    "action": "update ",
+    "status": "Success",
+    "description”: " Successfully added project resource."
+}

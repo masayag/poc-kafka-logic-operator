@@ -1,0 +1,107 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/serverlessworkflow/specification/refs/heads/0.8.x/schema/workflow.json
+id: create-ocp-project
+specVersion: "0.8"
+key: create-ocp-project
+version: "1.0.0"
+events:
+  - type: create-ocp-project-init-event
+    kind: consumed
+    name: create-ocp-project-init-event
+    source: local
+    dataOnly: false
+    correlation:
+      - contextAttributeName: correlationid
+
+  - type: create-ocp-project-service-event
+    kind: produced
+    name: create-ocp-project-service-event
+    correlation:
+      - contextAttributeName: correlationid
+
+  - type: create-ocp-project-service-output-event
+    kind: consumed
+    name: create-ocp-project-service-output-event
+    dataOnly: false
+    source: local
+    correlation:
+      - contextAttributeName: correlationid
+
+  - type: combined-event
+    kind: produced
+    name: combined-event
+    correlation:
+      - contextAttributeName: correlationid
+functions:
+  - name: sysLog
+    type: custom
+    operation: sysout:INFO
+start: listenToCreateOcpProject
+states:
+  - name: listenToCreateOcpProject
+    type: event
+    onEvents:
+      - eventRefs:
+          - create-ocp-project-init-event
+        eventDataFilter:
+          data: .data
+          toStateData: .createOcpProjecteData
+        actions:
+          - functionRef:
+              refName: sysLog
+              arguments:
+                message: ${ "Project " + (.createOcpProjecteData|tostring) }
+    transition: emitCreateOcpProjectServiceEvent
+  - name: emitCreateOcpProjectServiceEvent
+    type: operation
+    actions:
+      - eventRef:
+          triggerEventRef: create-ocp-project-service-event
+          data: |
+            {
+              source: .createOcpProjecteData.source,
+              id: .createOcpProjecteData.id,
+              time: .createOcpProjecteData.time,
+              reason: .createOcpProjecteData.reason,
+              type: .createOcpProjecteData.type,
+              externalReference: .createOcpProjecteData.externalReference,
+              params: .createOcpProjecteData.params
+            }
+      - functionRef:
+          refName: sysLog
+          arguments:
+            message: ${ "Project parameters " + (.createOcpProjecteData.params|tostring) }
+    transition: createOcpProjectServiceOutput
+  - name: createOcpProjectServiceOutput
+    type: callback
+    action:
+      functionRef:
+        refName: sysLog
+        arguments:
+          message: ${ "Create OCP Project service output " + (.createOcpProjectServiceOutputResult|tostring) }
+    eventRef: create-ocp-project-service-output-event
+    eventDataFilter:
+      data: .data
+      toStateData: .createOcpProjectServiceOutputResult
+    # timeouts:
+    #   eventTimeout: PT3M
+    transition: produceCombinedEvent
+  - name: produceCombinedEvent
+    type: operation
+    actions:
+      - eventRef:
+          triggerEventRef: combined-event
+          data: |
+            {
+              version: .createOcpProjecteData.version,
+              source: .createOcpProjecteData.source,
+              id: .createOcpProjecteData.id,
+              time: .createOcpProjecteData.time,
+              reason: .createOcpProjecteData.reason,
+              type: .createOcpProjecteData.type,
+              externalReference: .createOcpProjecteData.externalReference,
+              params: .createOcpProjecteData.params,
+              description: .createOcpProjectServiceOutputResult.result.description
+            }
+    end: true  
+
+
